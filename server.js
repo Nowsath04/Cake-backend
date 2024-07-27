@@ -6,20 +6,14 @@ const DbConnection = require("./config/dbConnection");
 dotenv.config({ path: path.join(__dirname, "config/config.env") });
 const PORT = process.env.PORT || 4000;
 const userRouter = require("./router/userRouter");
-const ErrorMiddleware = require("./middleWare/error");
-
-
-const userRouter=require("./router/userRouter")
+const ErrorMiddleware = require("./middleWare/error"); 
 const adminRouter=require("./router/AdminRouter")
 // middleware
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use("/api", userRouter)
-
-
 app.use("/api/user",userRouter)
-app.use("/api/admin",adminRouter)
+app.use("/api/admin",adminRouter)        
 // db connected
 DbConnection();
 
