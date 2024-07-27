@@ -1,6 +1,8 @@
+const asyncHandler = require("../middleWare/trycatch");
 const EmailVerificationModel = require("../models/EmailVerificationModel");
 const userModel = require("../models/userModel");
 const nodemailer = require("nodemailer");
+const ErrorHandler = require("../utils/ErrorHandler");
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -8,6 +10,38 @@ const transporter = nodemailer.createTransport({
     pass: process.env.NODEMAILER_PASSWORD, // Your Gmail password or app password
   },
 });
+
+
+
+exports.CreateNonce = asyncHandler(async (req, res, next) => {
+  const nonce = Math.floor(Math.random() * 1000000).toString();
+  const userid = req.body.userid;
+  console.log(userid);
+  const user = await userModel.findOne({ userid })
+  if (!userid) {
+    return next(new ErrorHandler("userid is needed", 401))
+  }
+  try {
+    if (!user) {
+      const user = await userModel.create({ userid, nonce: nonce });
+      return res.status(200).json({
+        user
+      })
+    } else {
+      const existUser = await userModel.findOneAndUpdate({ nonce, new: true })
+      const user = await userModel.findOne({ userid })
+      return res.json({
+        user
+      })
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+})
+
+
+
 exports.RegisterUser = async (req, res) => {
   const { name, email, DOB, password } = req.body;
   try {
