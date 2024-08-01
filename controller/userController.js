@@ -3,6 +3,10 @@ const EmailVerificationModel = require("../models/EmailVerificationModel");
 const userModel = require("../models/userModel");
 const nodemailer = require("nodemailer");
 const ErrorHandler = require("../utils/ErrorHandler");
+const createJwt = require("../utils/jwt")
+const ethUtil = require('ethereumjs-util');
+const { recoverPersonalSignature } = require("eth-sig-util");
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -12,6 +16,8 @@ const transporter = nodemailer.createTransport({
 });
 
 
+
+// Create Nonce
 
 exports.CreateNonce = asyncHandler(async (req, res, next) => {
   const nonce = Math.floor(Math.random() * 1000000).toString();
@@ -40,10 +46,104 @@ exports.CreateNonce = asyncHandler(async (req, res, next) => {
 
 })
 
+// Verify User 
+
+
+exports.CheckUser = asyncHandler(async (req, res, next) => {
+  const { nonce, signature, userid } = req.body
+
+  console.log(req.body);
+
+  try {
+
+    const updatedUser = await userModel.findOne({ $and: [{ "nonce": nonce }, { "userid": userid },] })
+
+    if (!updatedUser) {
+      return next(new ErrorHandler("User not found", 401));
+    }
+    const msg = `Welcome to Cake\n\nThis request will not trigger a blockchain\ntransaction or cost any gas fees.\n\nYour authentication status will reset after 24 hours.\n\nWallet address:${updatedUser.userid}\nNonce:${updatedUser.nonce}`;
+    const msgBufferHex = ethUtil.bufferToHex(Buffer.from(msg, 'utf8'));
+    const address = recoverPersonalSignature({
+      data: msgBufferHex,
+      sig: signature,
+    });
+
+    if (address.toLowerCase() === userid.toLowerCase()) {
+      createJwt(res, updatedUser)
+    } else {
+      res.status(401).send({
+        error: "Signature verification failed"
+      })
+      return null;
+    }
+
+    updatedUser.nonce = Math.floor(Math.random() * 1000000).toString();
+    await updatedUser.save()
+
+  } catch (error) {
+    console.log(error);
+  }
+
+})
+
+// Get User Profile
+
+exports.Myprofile = asyncHandler(async (req, res, next) => {
+  let user = req.user
+  console.log(req.user);
+  user = await userModel.findById(req.user.id)
+  console.log(user);
+  res.status(201).json({
+    success: true,
+    user
+  })
+})
+
+
+
+// LogOut
+
+exports.Userlogout = asyncHandler(async (req, res) => {
+  res.clearCookie('token').json({
+    success: true,
+    message: "logout successfully",
+  })
+})
+
+
+// User Details
+
+exports.UserDetails = asyncHandler(async (req, res) => {
+
+  const { name, email, dateofbirth, phoneno } = req.body;
+  console.log(req.user.id);
+  try {
+    const user = await userModel.findByIdAndUpdate(req.user.id, { name, email, dateofbirth, phoneno })
+    return res.status(201).json({
+      success: true,
+      user
+    })
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+
+// User Details
+
+exports.AllUsers = asyncHandler(async (req, res) => {
+
+  const alluser = await userModel.find({})
+  return res.status(201).json({
+    success: true,
+    alluser
+  })
+
+});
 
 
 exports.RegisterUser = async (req, res) => {
-  const { name, email, DOB, password } = req.body;
+  const { name, email, dateofbirth, phoneno } = req.body;
   try {
     const existUser = await userModel.findOne({ email: email });
     if (existUser) {
@@ -52,8 +152,8 @@ exports.RegisterUser = async (req, res) => {
     const newUser = await userModel.create({
       name: name,
       email: email,
-      password: password,
-      DOB: DOB,
+      phoneno: phoneno,
+      dateofbirth: dateofbirth,
     });
     createotp(newUser, res);
   } catch (error) {
