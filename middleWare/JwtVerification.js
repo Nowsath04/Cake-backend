@@ -2,9 +2,7 @@
 const jwt = require("jsonwebtoken")
 const trycatch = require("./trycatch")
 const ErrorHandler = require("../utils/ErrorHandler")
-const User = require("../models/userModels")
-
-
+const userModel = require("../models/userModel")
 
 
 const JwtVerification = trycatch(async (req, res, next) => {
@@ -16,7 +14,7 @@ const JwtVerification = trycatch(async (req, res, next) => {
     if (err) {
       return next(new ErrorHandler("Invalied Token", 403))
     }
-    req.user = await User.findById(decoded.userId)
+    req.user = await userModel.findById(decoded.userId)
     next()
   })
 })
