@@ -6,25 +6,21 @@ const DbConnection = require("./config/dbConnection");
 dotenv.config({ path: path.join(__dirname, "config/config.env") });
 const PORT = process.env.PORT || 4000;
 const userRouter = require("./router/userRouter");
-const adminRouter = require("./router/AdminRouter")
 const ErrorMiddleware = require("./middleWare/error");
+const adminRouter = require("./router/AdminRouter");
 const cookieParser = require("cookie-parser");
-
 // middleware
 const app = express();
 
 app.use(cookieParser())
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+}));
 app.use("/api/user", userRouter)
 app.use("/api/admin", adminRouter)
-app.use(cors({
-  origin: "http://localhost:5173", // specify your frontend origin here
-  credentials: true, // allow credentials to be sent
-}));
-app.use("/api/user", userRouter);
-
 // db connected
 DbConnection();
 
