@@ -18,7 +18,6 @@ const transporter = nodemailer.createTransport({
 
 
 // Create Nonce
-
 exports.CreateNonce = asyncHandler(async (req, res, next) => {
   const nonce = Math.floor(Math.random() * 1000000).toString();
   const userid = req.body.userid;
@@ -47,8 +46,6 @@ exports.CreateNonce = asyncHandler(async (req, res, next) => {
 })
 
 // Verify User 
-
-
 exports.CheckUser = asyncHandler(async (req, res, next) => {
   const { nonce, signature, userid } = req.body
 
@@ -87,7 +84,6 @@ exports.CheckUser = asyncHandler(async (req, res, next) => {
 })
 
 // Get User Profile
-
 exports.Myprofile = asyncHandler(async (req, res, next) => {
   let user = req.user
   console.log(req.user);
@@ -102,7 +98,6 @@ exports.Myprofile = asyncHandler(async (req, res, next) => {
 
 
 // LogOut
-
 exports.Userlogout = asyncHandler(async (req, res) => {
   res.clearCookie('token').json({
     success: true,
@@ -111,13 +106,43 @@ exports.Userlogout = asyncHandler(async (req, res) => {
 })
 
 
-// User Details
 
+// User Details All
+exports.AllUsers = asyncHandler(async (req, res) => {
+  const alluser = await userModel.find({})
+  return res.status(201).json({
+    success: true,
+    alluser
+  })
+});
+
+
+// exports.UserDetails = async (req, res) => {
+//   const { name, email, dateofbirth, phoneno } = req.body;
+//   try {
+//     const existUser = await userModel.findOne({ email: email });
+//     if (existUser) {
+//       return res.status(400).json({ message: "User already exists" });
+//     }
+//     const newUser = await userModel.create({
+//       name: name,
+//       email: email,
+//       phoneno: phoneno,
+//       dateofbirth: dateofbirth,
+//     });
+//     // createotp(newUser, res);
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
+// User Details
 exports.UserDetails = asyncHandler(async (req, res) => {
 
   const { name, email, dateofbirth, phoneno } = req.body;
   console.log(req.user.id);
   try {
+    const existUser = await userModel.findOne({ email: email });
     const user = await userModel.findByIdAndUpdate(req.user.id, { name, email, dateofbirth, phoneno })
     return res.status(201).json({
       success: true,
@@ -128,38 +153,6 @@ exports.UserDetails = asyncHandler(async (req, res) => {
   }
 });
 
-
-// User Details
-
-exports.AllUsers = asyncHandler(async (req, res) => {
-
-  const alluser = await userModel.find({})
-  return res.status(201).json({
-    success: true,
-    alluser
-  })
-
-});
-
-
-exports.RegisterUser = async (req, res) => {
-  const { name, email, dateofbirth, phoneno } = req.body;
-  try {
-    const existUser = await userModel.findOne({ email: email });
-    if (existUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-    const newUser = await userModel.create({
-      name: name,
-      email: email,
-      phoneno: phoneno,
-      dateofbirth: dateofbirth,
-    });
-    createotp(newUser, res);
-  } catch (error) {
-    console.log(error);
-  }
-};
 
 /// create otp
 const createotp = async ({ _id, email }, res) => {
@@ -188,7 +181,6 @@ const createotp = async ({ _id, email }, res) => {
 };
 
 // verify email
-
 exports.VerifyEmail = async (req, res) => {
   const { otp, userid } = req.body;
   try {
@@ -226,7 +218,6 @@ exports.VerifyEmail = async (req, res) => {
 };
 
 // login user
-
 exports.LoginUser = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -240,7 +231,6 @@ exports.LoginUser = async (req, res) => {
     if (!user.emailVarifications) {
       return createotp(user, res);
     }
-
     res.json({ message: "Logged in successfully", user });
   } catch (error) {
     console.log(error);
