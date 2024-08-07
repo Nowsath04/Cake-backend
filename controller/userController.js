@@ -50,11 +50,8 @@ exports.CheckUser = asyncHandler(async (req, res, next) => {
   const { nonce, signature, userid } = req.body
 
   console.log(req.body);
-
   try {
-
     const updatedUser = await userModel.findOne({ $and: [{ "nonce": nonce }, { "userid": userid },] })
-
     if (!updatedUser) {
       return next(new ErrorHandler("User not found", 401));
     }
